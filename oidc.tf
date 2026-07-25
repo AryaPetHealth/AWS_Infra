@@ -31,7 +31,12 @@ resource "aws_iam_role" "github_actions_terraform" {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         }
         StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          # GitHub's sub claim embeds immutable numeric IDs alongside the
+          # org/repo names (e.g. "repo:Org@123/Repo@456:ref:...") to stop a
+          # renamed/reclaimed org or repo from inheriting old trust — so
+          # this can't be a plain "repo:OWNER/REPO:*" match. Wildcard the
+          # IDs since they're opaque and not worth pinning by hand.
+          "token.actions.githubusercontent.com:sub" = "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:*"
         }
       }
     }]
