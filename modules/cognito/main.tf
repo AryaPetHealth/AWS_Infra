@@ -17,7 +17,11 @@ resource "aws_cognito_user_pool" "this" {
   }
 }
 
+# Deferred until Apple Sign in with Apple credentials are available —
+# set var.enable_apple_signin = true once apple_services_id etc. are real.
 resource "aws_cognito_identity_provider" "apple" {
+  count = var.enable_apple_signin ? 1 : 0
+
   user_pool_id  = aws_cognito_user_pool.this.id
   provider_name = "SignInWithApple"
   provider_type = "SignInWithApple"
@@ -47,7 +51,9 @@ resource "aws_cognito_user_pool_client" "app" {
 
   generate_secret = false
 
-  supported_identity_providers         = [aws_cognito_identity_provider.apple.provider_name]
+  supported_identity_providers = (
+    var.enable_apple_signin ? [aws_cognito_identity_provider.apple[0].provider_name] : ["COGNITO"]
+  )
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
   allowed_oauth_scopes                 = ["openid", "email", "profile"]

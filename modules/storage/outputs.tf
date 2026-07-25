@@ -19,5 +19,5 @@ output "processing_dlq_arn" {
 }
 
 output "apns_platform_application_arn" {
-  value = aws_sns_platform_application.apns.arn
+  value = var.enable_apns ? aws_sns_platform_application.apns[0].arn : ""
 }

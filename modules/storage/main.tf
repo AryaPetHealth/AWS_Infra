@@ -83,6 +83,8 @@ resource "aws_s3_bucket_notification" "documents" {
 # topic needed for single-recipient "job done" notifications.
 
 resource "aws_sns_platform_application" "apns" {
+  count = var.enable_apns ? 1 : 0
+
   name                = "${var.project_name}-${var.environment}-apns"
   platform            = var.apns_sandbox ? "APNS_SANDBOX" : "APNS"
   platform_credential = var.apns_signing_key
