@@ -1,0 +1,16 @@
+name: Terraform (prod)
+
+# Manual trigger ONLY — deliberately no `push` or `pull_request` trigger, so
+# this can never run as a side effect of pushing code. Someone has to go to
+# the Actions tab and click "Run workflow" for prod to be touched at all.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  terraform:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: prod
+      run_apply: true
+    secrets: inherit

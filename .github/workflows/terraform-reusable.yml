@@ -1,0 +1,145 @@
+name: Terraform (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "dev or prod — selects TF_VAR_environment and the state key"
+        required: true
+        type: string
+      run_apply:
+        description: "Whether to run the approval + apply jobs (false for plan-only runs, e.g. PRs)"
+        required: true
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-${{ inputs.environment }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-south-1
+  TF_VAR_environment: ${{ inputs.environment }}
+  TF_VAR_apple_services_id: ${{ secrets.APPLE_SERVICES_ID }}
+  TF_VAR_apple_team_id: ${{ secrets.APPLE_TEAM_ID }}
+  TF_VAR_apple_key_id: ${{ secrets.APPLE_KEY_ID }}
+  TF_VAR_apple_private_key: ${{ secrets.APPLE_PRIVATE_KEY }}
+  # cognito_callback_urls/cognito_logout_urls are list(string) — leave unset
+  # here and let the Terraform defaults apply. If you need custom URLs, add
+  # COGNITO_CALLBACK_URLS/COGNITO_LOGOUT_URLS secrets as JSON arrays (e.g.
+  # ["arya://callback"]) and map them here as TF_VAR_ envs; an empty secret
+  # breaks Terraform's HCL parsing for list-typed variables.
+  TF_VAR_apns_signing_key: ${{ secrets.APNS_SIGNING_KEY }}
+  TF_VAR_apns_signing_key_id: ${{ secrets.APNS_SIGNING_KEY_ID }}
+  TF_VAR_apns_team_id: ${{ secrets.APNS_TEAM_ID }}
+  TF_VAR_apns_bundle_id: ${{ secrets.APNS_BUNDLE_ID }}
+  # documents_bucket_name is left unset — Terraform auto-generates a
+  # globally-unique name from the account ID.
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.8"
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+
+      # No backend block is checked in (so local runs default to local
+      # state) — CI supplies one here, pointing at the bucket bootstrap/
+      # created, via an override file merged in at init time. The key is
+      # scoped by environment so one bucket safely holds both dev and prod
+      # state as separate objects.
+      - name: Configure remote state backend
+        run: |
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "s3" {
+              bucket       = "${{ vars.TF_STATE_BUCKET }}"
+              key          = "arya/${{ inputs.environment }}/terraform.tfstate"
+              region       = "${{ env.AWS_REGION }}"
+              use_lockfile = true
+              encrypt      = true
+            }
+          }
+          EOF
+
+      - name: terraform init
+        run: terraform init
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: terraform plan
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Upload plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}
+          path: tfplan
+          retention-days: 1
+
+  # Gated by a GitHub Environment with required reviewers (configure this
+  # once in repo Settings → Environments → "<environment>-apply" → Required
+  # reviewers — that protection rule can't be expressed in YAML). The job
+  # itself does nothing but wait for that approval before apply can start.
+  approval:
+    needs: plan
+    if: inputs.run_apply
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}-apply
+    steps:
+      - run: echo "Approved for ${{ inputs.environment }} — proceeding to apply."
+
+  apply:
+    needs: approval
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.8"
+
+      - name: Configure remote state backend
+        run: |
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "s3" {
+              bucket       = "${{ vars.TF_STATE_BUCKET }}"
+              key          = "arya/${{ inputs.environment }}/terraform.tfstate"
+              region       = "${{ env.AWS_REGION }}"
+              use_lockfile = true
+              encrypt      = true
+            }
+          }
+          EOF
+
+      - name: terraform init
+        run: terraform init
+
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}
+
+      - name: terraform apply
+        run: terraform apply -auto-approve tfplan

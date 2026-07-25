@@ -1,0 +1,15 @@
+name: Terraform (dev)
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  terraform:
+    uses: ./.github/workflows/terraform-reusable.yml
+    with:
+      environment: dev
+      run_apply: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    secrets: inherit
