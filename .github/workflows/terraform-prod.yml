@@ -6,6 +6,10 @@ name: Terraform (prod)
 on:
   workflow_dispatch: {}
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   terraform:
     if: github.ref == 'refs/heads/main'
