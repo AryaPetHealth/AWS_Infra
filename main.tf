@@ -41,10 +41,10 @@ module "cognito" {
   environment  = var.environment
 
   enable_apple_signin = var.enable_apple_signin
-  apple_services_id    = var.apple_services_id
-  apple_team_id        = var.apple_team_id
-  apple_key_id         = var.apple_key_id
-  apple_private_key    = var.apple_private_key
+  apple_services_id   = var.apple_services_id
+  apple_team_id       = var.apple_team_id
+  apple_key_id        = var.apple_key_id
+  apple_private_key   = var.apple_private_key
 
   callback_urls = var.cognito_callback_urls
   logout_urls   = var.cognito_logout_urls
