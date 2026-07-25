@@ -12,7 +12,8 @@ data "aws_subnets" "default" {
 # --- IAM: EC2 instance role for the EB app ---
 
 resource "aws_iam_role" "eb_ec2" {
-  name = "${var.project_name}-${var.environment}-eb-ec2"
+  name = "${var.project_name}-ebstalk-${var.environment}-role"
+  tags = { Name = "${var.project_name}-ebstalk-${var.environment}-role" }
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -30,7 +31,7 @@ resource "aws_iam_role_policy_attachment" "eb_web_tier" {
 }
 
 resource "aws_iam_role_policy" "app_permissions" {
-  name = "${var.project_name}-${var.environment}-app-permissions"
+  name = "${var.project_name}-ebstalk-${var.environment}-policy"
   role = aws_iam_role.eb_ec2.id
 
   policy = jsonencode({
@@ -71,19 +72,22 @@ resource "aws_iam_role_policy" "app_permissions" {
 }
 
 resource "aws_iam_instance_profile" "eb_ec2" {
-  name = "${var.project_name}-${var.environment}-eb-ec2"
+  name = "${var.project_name}-ebstalk-${var.environment}-profile"
   role = aws_iam_role.eb_ec2.name
+  tags = { Name = "${var.project_name}-ebstalk-${var.environment}-profile" }
 }
 
 # --- Elastic Beanstalk ---
 
 resource "aws_elastic_beanstalk_application" "this" {
-  name = "${var.project_name}-${var.environment}"
+  name = "${var.project_name}-ebstalk-${var.environment}"
+  tags = { Name = "${var.project_name}-ebstalk-${var.environment}" }
 }
 
 resource "aws_elastic_beanstalk_environment" "this" {
-  name                = "${var.project_name}-${var.environment}"
+  name                = "${var.project_name}-ebstalk-${var.environment}-env"
   application         = aws_elastic_beanstalk_application.this.name
+  tags                = { Name = "${var.project_name}-ebstalk-${var.environment}-env" }
   solution_stack_name = var.eb_solution_stack_name
 
   setting {

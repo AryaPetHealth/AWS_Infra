@@ -10,14 +10,16 @@ data "aws_subnets" "default" {
 }
 
 resource "aws_db_subnet_group" "this" {
-  name       = "${var.project_name}-${var.environment}-db"
+  name       = "${var.project_name}-rds-${var.environment}-subnets"
   subnet_ids = data.aws_subnets.default.ids
+  tags       = { Name = "${var.project_name}-rds-${var.environment}-subnets" }
 }
 
 resource "aws_security_group" "rds" {
-  name        = "${var.project_name}-${var.environment}-rds"
+  name        = "${var.project_name}-rds-${var.environment}-sg"
   description = "Allow Postgres access from the EB app"
   vpc_id      = data.aws_vpc.default.id
+  tags        = { Name = "${var.project_name}-rds-${var.environment}-sg" }
 
   ingress {
     description     = "Postgres from EB app"
@@ -41,7 +43,7 @@ resource "random_password" "db" {
 }
 
 resource "aws_db_instance" "this" {
-  identifier     = "${var.project_name}-${var.environment}"
+  identifier     = "${var.project_name}-rds-${var.environment}"
   engine         = "postgres"
   engine_version = "16"
 
@@ -59,12 +61,15 @@ resource "aws_db_instance" "this" {
   publicly_accessible       = false
   backup_retention_period   = 7
   skip_final_snapshot       = false
-  final_snapshot_identifier = "${var.project_name}-${var.environment}-final"
+  final_snapshot_identifier = "${var.project_name}-rds-${var.environment}-final"
   deletion_protection       = true
+
+  tags = { Name = "${var.project_name}-rds-${var.environment}" }
 }
 
 resource "aws_secretsmanager_secret" "db" {
-  name = "${var.project_name}/${var.environment}/rds"
+  name = "${var.project_name}/rds-${var.environment}"
+  tags = { Name = "${var.project_name}-rds-${var.environment}-secret" }
 }
 
 resource "aws_secretsmanager_secret_version" "db" {

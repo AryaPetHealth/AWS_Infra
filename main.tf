@@ -15,9 +15,10 @@ locals {
 # the RDS ingress rule) — lives at root so neither module depends on the
 # other's output, which would create a module cycle.
 resource "aws_security_group" "app" {
-  name        = "${var.project_name}-${var.environment}-app"
+  name        = "${var.project_name}-ebstalk-${var.environment}-sg"
   description = "EB app instance"
   vpc_id      = data.aws_vpc.default.id
+  tags        = { Name = "${var.project_name}-ebstalk-${var.environment}-sg" }
 
   ingress {
     description = "HTTP"

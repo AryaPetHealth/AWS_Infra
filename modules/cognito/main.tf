@@ -1,5 +1,6 @@
 resource "aws_cognito_user_pool" "this" {
-  name = "${var.project_name}-${var.environment}"
+  name = "${var.project_name}-userpool-${var.environment}"
+  tags = { Name = "${var.project_name}-userpool-${var.environment}" }
 
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
@@ -41,12 +42,12 @@ resource "aws_cognito_identity_provider" "apple" {
 }
 
 resource "aws_cognito_user_pool_domain" "this" {
-  domain       = "${var.project_name}-${var.environment}"
+  domain       = "${var.project_name}-userpool-${var.environment}"
   user_pool_id = aws_cognito_user_pool.this.id
 }
 
 resource "aws_cognito_user_pool_client" "app" {
-  name         = "${var.project_name}-${var.environment}-app-client"
+  name         = "${var.project_name}-appclient-${var.environment}"
   user_pool_id = aws_cognito_user_pool.this.id
 
   generate_secret = false

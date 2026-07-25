@@ -2,6 +2,7 @@
 
 resource "aws_s3_bucket" "documents" {
   bucket = var.documents_bucket_name
+  tags   = { Name = var.documents_bucket_name }
 }
 
 resource "aws_s3_bucket_versioning" "documents" {
@@ -36,11 +37,13 @@ resource "aws_s3_bucket_public_access_block" "documents" {
 resource "aws_sqs_queue" "processing_dlq" {
   name                      = "${var.project_name}-${var.environment}-processing-dlq"
   message_retention_seconds = 1209600 # 14 days
+  tags                      = { Name = "${var.project_name}-${var.environment}-processing-dlq" }
 }
 
 resource "aws_sqs_queue" "processing" {
   name                       = "${var.project_name}-${var.environment}-processing"
   visibility_timeout_seconds = 120 # long enough for a Textract call
+  tags                       = { Name = "${var.project_name}-${var.environment}-processing" }
 
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.processing_dlq.arn

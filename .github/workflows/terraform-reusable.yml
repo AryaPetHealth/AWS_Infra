@@ -68,7 +68,7 @@ jobs:
           terraform {
             backend "s3" {
               bucket       = "${{ vars.TF_STATE_BUCKET }}"
-              key          = "arya/${{ inputs.environment }}/terraform.tfstate"
+              key          = "${{ inputs.environment }}/terraform.tfstate"
               region       = "${{ env.AWS_REGION }}"
               use_lockfile = true
               encrypt      = true
@@ -125,7 +125,7 @@ jobs:
           terraform {
             backend "s3" {
               bucket       = "${{ vars.TF_STATE_BUCKET }}"
-              key          = "arya/${{ inputs.environment }}/terraform.tfstate"
+              key          = "${{ inputs.environment }}/terraform.tfstate"
               region       = "${{ env.AWS_REGION }}"
               use_lockfile = true
               encrypt      = true
