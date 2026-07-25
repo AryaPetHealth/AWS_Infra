@@ -159,6 +159,7 @@ variable "eb_solution_stack_name" {
 # --- S3 ---
 
 variable "documents_bucket_name" {
-  description = "Globally-unique S3 bucket name for uploaded pet health documents"
+  description = "Globally-unique S3 bucket name for uploaded pet health documents. Leave blank to auto-generate one scoped to this AWS account (guaranteed unique)."
   type        = string
+  default     = ""
 }

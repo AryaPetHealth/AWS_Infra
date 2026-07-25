@@ -2,6 +2,15 @@ data "aws_vpc" "default" {
   default = true
 }
 
+locals {
+  # AWS account IDs are unique per-account, so appending it guarantees a
+  # globally-unique S3 bucket name without requiring manual input.
+  documents_bucket_name = coalesce(
+    var.documents_bucket_name != "" ? var.documents_bucket_name : null,
+    "${var.project_name}-${var.environment}-documents-${data.aws_caller_identity.current.account_id}"
+  )
+}
+
 # Shared by compute (attached to the EC2 instance) and database (source of
 # the RDS ingress rule) — lives at root so neither module depends on the
 # other's output, which would create a module cycle.
@@ -55,7 +64,7 @@ module "storage" {
 
   project_name          = var.project_name
   environment           = var.environment
-  documents_bucket_name = var.documents_bucket_name
+  documents_bucket_name = local.documents_bucket_name
 
   enable_apns         = var.enable_apns
   apns_signing_key    = var.apns_signing_key
