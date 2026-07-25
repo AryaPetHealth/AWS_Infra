@@ -1,0 +1,34 @@
+# Copy to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored — never commit real secrets.
+
+aws_region   = "ap-south-1"
+project_name = "arya"
+environment  = "prod"
+
+# --- Cognito / Sign in with Apple ---
+# From your Apple Developer account: Certificates, Identifiers & Profiles.
+apple_services_id = "com.example.arya.signin"
+apple_team_id      = "ABCDE12345"
+apple_key_id       = "XXXXXXXXXX"
+apple_private_key  = <<-EOT
+  -----BEGIN PRIVATE KEY-----
+  ...
+  -----END PRIVATE KEY-----
+EOT
+
+cognito_callback_urls = ["arya://callback"]
+cognito_logout_urls   = ["arya://logout"]
+
+# --- SNS / APNs ---
+apns_signing_key    = <<-EOT
+  -----BEGIN PRIVATE KEY-----
+  ...
+  -----END PRIVATE KEY-----
+EOT
+apns_signing_key_id = "XXXXXXXXXX"
+apns_team_id        = "ABCDE12345"
+apns_bundle_id       = "com.example.arya"
+apns_sandbox         = false
+
+# --- S3 ---
+documents_bucket_name = "arya-prod-documents-CHANGE-ME"
