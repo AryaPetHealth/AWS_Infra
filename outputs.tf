@@ -36,5 +36,5 @@ output "eb_environment_endpoint_url" {
 
 output "github_actions_role_arn" {
   description = "Set this as the AWS_ROLE_ARN repo variable in GitHub Actions"
-  value       = aws_iam_role.github_actions_terraform.arn
+  value       = local.github_actions_role_arn
 }
