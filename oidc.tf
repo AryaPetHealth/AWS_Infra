@@ -4,16 +4,16 @@
 #
 # Bootstrapping note: the OIDC provider itself must already exist in the
 # account (created once, out of band, with real human AWS credentials)
-# before CI can use it — it's read here as data, never created/managed by
-# Terraform. Letting CI manage its own trust anchor would let it mint or
-# replace the very thing that authorizes it, and a resource can't be shared
-# safely across the separate dev/prod state files anyway (only one
-# provider can exist per URL per account).
+# before CI can use it. Its ARN is deterministic (account ID + fixed URL),
+# so it's built as a plain string below instead of looked up via Terraform
+# — no data source, no extra IAM permission needed to read it. Managing it
+# as a resource here would also conflict across the separate dev/prod
+# state files, since only one provider can exist per URL per account.
 
 data "aws_caller_identity" "current" {}
 
-data "aws_iam_openid_connect_provider" "github_actions" {
-  url = "https://token.actions.githubusercontent.com"
+locals {
+  github_oidc_provider_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
 }
 
 resource "aws_iam_role" "github_actions_terraform" {
@@ -23,7 +23,7 @@ resource "aws_iam_role" "github_actions_terraform" {
     Version = "2012-10-17"
     Statement = [{
       Effect    = "Allow"
-      Principal = { Federated = data.aws_iam_openid_connect_provider.github_actions.arn }
+      Principal = { Federated = local.github_oidc_provider_arn }
       Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
@@ -58,33 +58,22 @@ resource "aws_iam_role_policy" "github_actions_iam_scoped" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "ManageAppIamResources"
-        Effect = "Allow"
-        Action = [
-          "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:TagRole",
-          "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy",
-          "iam:ListRolePolicies", "iam:ListAttachedRolePolicies",
-          "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:PassRole",
-          "iam:CreateInstanceProfile", "iam:DeleteInstanceProfile", "iam:GetInstanceProfile",
-          "iam:TagInstanceProfile", "iam:UntagInstanceProfile",
-          "iam:AddRoleToInstanceProfile", "iam:RemoveRoleFromInstanceProfile",
-        ]
-        Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/${var.project_name}-*",
-        ]
-      },
-      {
-        # Read-only lookup for the data source above — the provider itself
-        # is managed outside Terraform, so this is deliberately just Get,
-        # never Create/Delete/Update.
-        Sid      = "ReadOidcProvider"
-        Effect   = "Allow"
-        Action   = "iam:GetOpenIDConnectProvider"
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
-      }
-    ]
+    Statement = [{
+      Sid    = "ManageAppIamResources"
+      Effect = "Allow"
+      Action = [
+        "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:TagRole",
+        "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy",
+        "iam:ListRolePolicies", "iam:ListAttachedRolePolicies",
+        "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:PassRole",
+        "iam:CreateInstanceProfile", "iam:DeleteInstanceProfile", "iam:GetInstanceProfile",
+        "iam:TagInstanceProfile", "iam:UntagInstanceProfile",
+        "iam:AddRoleToInstanceProfile", "iam:RemoveRoleFromInstanceProfile",
+      ]
+      Resource = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-*",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/${var.project_name}-*",
+      ]
+    }]
   })
 }
