@@ -153,7 +153,7 @@ variable "eb_instance_type" {
 variable "eb_solution_stack_name" {
   description = "Elastic Beanstalk solution stack (Docker platform)"
   type        = string
-  default     = "64bit Amazon Linux 2023 v4.3.4 running Docker"
+  default     = "64bit Amazon Linux 2023 v4.13.4 running Docker"
 }
 
 # --- S3 ---
