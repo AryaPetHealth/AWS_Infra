@@ -40,7 +40,7 @@ env:
   # documents_bucket_name is left unset — Terraform auto-generates a
   # globally-unique name from the account ID.
 
-  
+
 jobs:
   plan:
     runs-on: ubuntu-latest
