@@ -132,6 +132,13 @@ resource "aws_elastic_beanstalk_environment" "this" {
     value     = "true"
   }
 
+  # Matches the app repo's .ebextensions; without it Terraform resets EB's 600s default.
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "Timeout"
+    value     = "1800"
+  }
+
   dynamic "setting" {
     for_each = var.environment_variables
     content {
