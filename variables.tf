@@ -144,10 +144,16 @@ variable "db_allocated_storage" {
 
 # --- Elastic Beanstalk ---
 
+variable "eb_instance_type" {
+  description = "EC2 instance type for the Elastic Beanstalk environment (prod; dev overrides via eb_instance_type_dev)"
+  type        = string
+  default     = "t3.micro"
+}
+
 # t3.small (2 GB): the on-instance Docker build (spaCy) on a 1 GB t3.micro runs past
 # EB's deploy timeout. Can go back to t3.micro once the image is built in CI and pushed to ECR.
-variable "eb_instance_type" {
-  description = "EC2 instance type for the Elastic Beanstalk environment"
+variable "eb_instance_type_dev" {
+  description = "EC2 instance type for the dev Elastic Beanstalk environment"
   type        = string
   default     = "t3.small"
 }

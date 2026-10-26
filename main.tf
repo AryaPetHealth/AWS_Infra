@@ -97,7 +97,7 @@ module "compute" {
 
   security_group_id = aws_security_group.app.id
 
-  eb_instance_type       = var.eb_instance_type
+  eb_instance_type       = var.environment == "dev" ? var.eb_instance_type_dev : var.eb_instance_type
   eb_solution_stack_name = var.eb_solution_stack_name
 
   documents_bucket_arn = module.storage.documents_bucket_arn
