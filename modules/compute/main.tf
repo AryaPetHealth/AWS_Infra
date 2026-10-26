@@ -36,7 +36,7 @@ resource "aws_iam_role_policy" "app_permissions" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
+    Statement = concat([
       {
         Sid      = "Textract"
         Effect   = "Allow"
@@ -67,7 +67,25 @@ resource "aws_iam_role_policy" "app_permissions" {
         Action   = ["secretsmanager:GetSecretValue"]
         Resource = var.db_secret_arn
       }
-    ]
+      ],
+      # Backend dev-login (DEV_AUTH_ENABLED) uses Cognito admin auth. Originally
+      # added by hand in AWS; codified here so applies stop removing it.
+      var.environment == "dev" ? [
+        {
+          Sid    = "CognitoAuth"
+          Effect = "Allow"
+          Action = [
+            "cognito-idp:AdminCreateUser",
+            "cognito-idp:AdminSetUserPassword",
+            "cognito-idp:AdminInitiateAuth",
+            "cognito-idp:AdminGetUser",
+            "cognito-idp:InitiateAuth",
+            "cognito-idp:GlobalSignOut",
+          ]
+          Resource = var.cognito_user_pool_arn
+        }
+      ] : []
+    )
   })
 }
 

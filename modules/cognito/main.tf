@@ -62,8 +62,13 @@ resource "aws_cognito_user_pool_client" "app" {
   callback_urls = var.callback_urls
   logout_urls   = var.logout_urls
 
-  explicit_auth_flows = [
-    "ALLOW_REFRESH_TOKEN_AUTH",
-    "ALLOW_USER_SRP_AUTH",
-  ]
+  # ALLOW_ADMIN_USER_PASSWORD_AUTH backs the backend's dev-login (AdminInitiateAuth)
+  # in dev only. Originally added by hand in AWS; codified so applies stop removing it.
+  explicit_auth_flows = concat(
+    [
+      "ALLOW_REFRESH_TOKEN_AUTH",
+      "ALLOW_USER_SRP_AUTH",
+    ],
+    var.environment == "dev" ? ["ALLOW_ADMIN_USER_PASSWORD_AUTH"] : [],
+  )
 }

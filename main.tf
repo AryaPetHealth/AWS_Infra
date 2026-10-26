@@ -104,6 +104,8 @@ module "compute" {
   processing_queue_arn = module.storage.processing_queue_arn
   db_secret_arn        = module.database.secret_arn
 
+  cognito_user_pool_arn = module.cognito.user_pool_arn
+
   environment_variables = {
     AWS_REGION                = var.aws_region
     S3_DOCUMENTS_BUCKET       = module.storage.documents_bucket_name

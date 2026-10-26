@@ -31,6 +31,10 @@ variable "db_secret_arn" {
   type = string
 }
 
+variable "cognito_user_pool_arn" {
+  type = string
+}
+
 variable "environment_variables" {
   description = "Env vars exposed to the app via aws:elasticbeanstalk:application:environment"
   type        = map(string)
